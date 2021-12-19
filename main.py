@@ -3,7 +3,7 @@ import random
 import sys
 
 WIDTH = 1280
-HEIGHT = 720
+HEIGHT = 736
 FPS = 60
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -51,18 +51,15 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-            player.rect.y += -1
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-            player.rect.y += 1.2
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
-            player.rect.x += 1.2
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_a:
-            player.rect.x += -1
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_w and\
-                event.type == pygame.KEYDOWN and event.key == pygame.K_d:
-            player.rect.y += -1
-            player.rect.x += 1.2
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            player.rect.y -= 1
+        if keys[pygame.K_s]:
+            player.rect.y += 1
+        if keys[pygame.K_d]:
+            player.rect.x += 1
+        if keys[pygame.K_a]:
+            player.rect.x -= 1
     all_sprites.update()
     screen.fill(WHITE)
     all_sprites.draw(screen)
