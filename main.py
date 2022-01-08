@@ -5,7 +5,7 @@ import os
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y):
+    def __init__(self, tile_type, pos_x, pos_y, is_wall):
         super().__init__(tiles_group, all_sprites)
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
@@ -18,27 +18,25 @@ class Player(pygame.sprite.Sprite):
         self.image = player_image
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y - 64)
-        self.pos = [pos_x, pos_y]
-        # здесь будем хранить изменения по x и если оно равно 64 или -64 обнулям и меняем pos_x на 1 или -1
-        # аналогично с y
-        # это всё нужно что бы правильно считать столкновения со стенами
-        self.move_x = 0
-        self.move_y = 0
+        self.cords = [pos_x * 64, pos_y * 64]
+        self.old_cords = 0, 0
+        self.hp = 3
+        self.speed = 1
 
     def update(self):
-        if self.rect.right > WIDTH:
-            self.rect.right = WIDTH
-        if self.rect.bottom > HEIGHT:
-            self.rect.bottom = HEIGHT
-        if self.rect.top < 0:
-            self.rect.top = 0
-        if self.rect.left < 0:
-            self.rect.left = 0
-
-    def move(self, x, y):
-        self.pos = (x, y)
-        self.rect = self.image.get_rect().move(tile_width * self.pos[0],
-                                               tile_height * self.pos[1] - 64)
+        collides = pygame.sprite.spritecollide(self, all_sprites, False)
+        for coll in collides:
+            if coll.__class__ is Tile:
+                if coll.image == tile_images['wall']:
+                    if self.rect.collidepoint(coll.rect.center):
+                        if self.rect.x + 15 < coll.rect.x:
+                            self.rect.x -= 15
+                        if self.rect.x - 15 > coll.rect.x:
+                            self.rect.x += 15
+                        if self.rect.y + 15 < coll.rect.y:
+                            self.rect.y -= 15
+                        if self.rect.y - 15 > coll.rect.y:
+                            self.rect.y += 15
 
 
 class AbstractBoss:
@@ -68,11 +66,11 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                Tile('empty', x, y)
+                Tile('empty', x, y, False)
             elif level[y][x] == '#':
-                Tile('wall', x, y)
+                Tile('wall', x, y, True)
             elif level[y][x] == '@':
-                Tile('empty', x, y)
+                Tile('empty', x, y, False)
                 new_player = Player(x, y)
     return new_player, x, y
 
@@ -115,20 +113,18 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             keys = pygame.key.get_pressed()
-            if event.type == pygame.KEYDOWN:
-                x, y = player.pos
-                if keys[pygame.K_w]:
-                    if y > 0 and level_map[y - 1][x] != '#':
-                        player.move(x, y - 1)
-                if keys[pygame.K_s]:
-                    if y < level_y - 1 and level_map[y + 1][x] != '#':
-                        player.move(x, y + 1)
-                if keys[pygame.K_d]:
-                    if x < level_x - 1 and level_map[y][x + 1] != '#':
-                        player.move(x + 1, y)
-                if keys[pygame.K_a]:
-                    if x > 0 and level_map[y][x - 1] != '#':
-                        player.move(x - 1, y)
+            if keys[pygame.K_w]:
+                player.old_cords = player.rect.x, player.rect.y
+                player.rect.y -= player.speed
+            if keys[pygame.K_s]:
+                player.old_cords = player.rect.x, player.rect.y
+                player.rect.y += player.speed
+            if keys[pygame.K_d]:
+                player.old_cords = player.rect.x, player.rect.y
+                player.rect.x += player.speed
+            if keys[pygame.K_a]:
+                player.old_cords = player.rect.x, player.rect.y
+                player.rect.x -= player.speed
         screen.fill(pygame.Color('black'))
         player_group.update()
         all_sprites.update()
