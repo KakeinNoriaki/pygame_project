@@ -2,10 +2,11 @@ import pygame
 import random
 import sys
 import os
+import time
 
 
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, tile_type, pos_x, pos_y, is_wall):
+    def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
@@ -29,14 +30,23 @@ class Player(pygame.sprite.Sprite):
             if coll.__class__ is Tile:
                 if coll.image == tile_images['wall']:
                     if self.rect.collidepoint(coll.rect.center):
-                        if self.rect.x + 15 < coll.rect.x:
-                            self.rect.x -= 15
-                        if self.rect.x - 15 > coll.rect.x:
-                            self.rect.x += 15
-                        if self.rect.y + 15 < coll.rect.y:
-                            self.rect.y -= 15
-                        if self.rect.y - 15 > coll.rect.y:
-                            self.rect.y += 15
+                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 0)
+                if coll.image == tile_images['pit'] or coll.image == tile_images['spike']:
+                    if self.rect.collidepoint(coll.rect.center):
+                        self.hp -= 1
+                        print(self.hp)
+                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 45)
+                        time.sleep(0.5)
+
+    def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y, mod):
+        if self.rect.x + 15 < coll_rect_x:
+            self.rect.x -= 15 + mod
+        if self.rect.x - 15 > coll_rect_x:
+            self.rect.x += 15 + mod
+        if self.rect.y + 15 < coll_rect_y:
+            self.rect.y -= 15 + mod
+        if self.rect.y - 15 > coll_rect_y:
+            self.rect.y += 15 + mod
 
 
 class AbstractBoss:
@@ -66,12 +76,16 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                Tile('empty', x, y, False)
+                Tile('floor', x, y)
             elif level[y][x] == '#':
-                Tile('wall', x, y, True)
+                Tile('wall', x, y)
             elif level[y][x] == '@':
-                Tile('empty', x, y, False)
+                Tile('floor', x, y)
                 new_player = Player(x, y)
+            elif level[y][x] == 'O':
+                Tile('pit', x, y)
+            elif level[y][x] == '1':
+                Tile('spike', x, y)
     return new_player, x, y
 
 
@@ -85,8 +99,11 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 tile_images = {
-    'wall': load_image('box.png'),
-    'empty': load_image('grass.png')
+    'wall': load_image("assets\_rooms\_room_tiles_1\wall_tile.png"),
+    'floor': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
+    'spike': load_image("assets\_rooms\_room_tiles_1\spike_tile.png"),
+    'pit': load_image("assets\_rooms\_room_tiles_1\pit_tile.png"),
+    'door_up': load_image("assets\_rooms\_room_tiles_1\door_up.png"),
 }
 
 pygame.display.set_caption("Pygame_project")
@@ -125,7 +142,7 @@ def main():
             if keys[pygame.K_a]:
                 player.old_cords = player.rect.x, player.rect.y
                 player.rect.x -= player.speed
-        screen.fill(pygame.Color('black'))
+        screen.fill((180, 35, 122))
         player_group.update()
         all_sprites.update()
         all_sprites.draw(screen)
