@@ -1,5 +1,4 @@
 import pygame
-import random
 import sys
 import os
 import time
@@ -37,6 +36,9 @@ class Player(pygame.sprite.Sprite):
                         print(self.hp)
                         self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 45)
                         time.sleep(0.5)
+                if coll.image == tile_images['door_right']:
+                    if self.rect.collidepoint(coll.rect.center):
+                        load_new_lvl()
 
     def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y, mod):
         if self.rect.x + 15 < coll_rect_x:
@@ -54,7 +56,7 @@ class AbstractBoss:
     #  тут крч сами как нибудь
 
 
-def load_image(name, colorkey=None):
+def load_image(name):
     fullname = os.path.join(name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
@@ -64,6 +66,7 @@ def load_image(name, colorkey=None):
 
 
 def load_level(filename):
+    global level_map
     filename = filename
     with open(filename, 'r') as mapFile:
         level_map = [line.strip() for line in mapFile]
@@ -72,7 +75,6 @@ def load_level(filename):
 
 
 def generate_level(level):
-    new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -86,7 +88,19 @@ def generate_level(level):
                 Tile('pit', x, y)
             elif level[y][x] == '1':
                 Tile('spike', x, y)
+            elif level[y][x] == 'E':
+                Tile('door_right', x, y)
     return new_player, x, y
+
+
+def load_new_lvl():
+    global player, level_x, level_y, level_map, all_sprites
+    all_sprites = pygame.sprite.Group()
+    player.kill()
+    level_map = load_level('map_2.txt')
+    player, level_x, level_y = generate_level(level_map)
+    all_sprites.add(player)
+    print(all_sprites)
 
 
 WIDTH = 1280
@@ -103,7 +117,7 @@ tile_images = {
     'floor': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
     'spike': load_image("assets\_rooms\_room_tiles_1\spike_tile.png"),
     'pit': load_image("assets\_rooms\_room_tiles_1\pit_tile.png"),
-    'door_up': load_image("assets\_rooms\_room_tiles_1\door_up.png"),
+    'door_right': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
 }
 
 pygame.display.set_caption("Pygame_project")
@@ -113,16 +127,18 @@ player_group = pygame.sprite.Group()
 tile_width = tile_height = 64
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+bgk = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.key.set_repeat(1, 1)
-
-level_map = load_level('map.txt')
 player_image = load_image('assets\player\down\player_move_down_1.png')
-player, level_x, level_y = generate_level(load_level('map.txt'))
+
+level_map = load_level('map_1.txt')
+player, level_x, level_y = generate_level(level_map)
 all_sprites.add(player)
 
 
 def main():
+    print(all_sprites)
     running = True
     while running:
         clock.tick(FPS)
