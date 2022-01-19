@@ -36,7 +36,7 @@ class Player(pygame.sprite.Sprite):
                         print(self.hp)
                         self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 45)
                         time.sleep(0.5)
-                if coll.image == tile_images['door_right']:
+                if coll.image == tile_images['door']:
                     if self.rect.collidepoint(coll.rect.center):
                         load_new_lvl()
 
@@ -117,7 +117,7 @@ tile_images = {
     'floor': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
     'spike': load_image("assets\_rooms\_room_tiles_1\spike_tile.png"),
     'pit': load_image("assets\_rooms\_room_tiles_1\pit_tile.png"),
-    'door_right': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
+    'door': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
 }
 
 pygame.display.set_caption("Pygame_project")
