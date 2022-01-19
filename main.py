@@ -4,6 +4,7 @@ import os
 import time
 
 
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
@@ -35,7 +36,7 @@ class Player(pygame.sprite.Sprite):
                         self.hp -= 1
                         print(self.hp)
                         self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 45)
-                        time.sleep(0.5)
+                        time.sleep(1)
                 if coll.image == tile_images['door']:
                     if self.rect.collidepoint(coll.rect.center):
                         load_new_lvl()
@@ -120,6 +121,8 @@ tile_images = {
     'door': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
 }
 
+
+
 pygame.display.set_caption("Pygame_project")
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
@@ -135,6 +138,11 @@ player_image = load_image('assets\player\down\player_move_down_1.png')
 level_map = load_level('map_1.txt')
 player, level_x, level_y = generate_level(level_map)
 all_sprites.add(player)
+
+pygame.mixer.init()
+pygame.mixer.music.load('assets\_tracks\classic_music')
+pygame.mixer.music.set_volume(0.05)
+pygame.mixer.music.play()
 
 
 def main():
