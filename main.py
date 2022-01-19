@@ -89,7 +89,7 @@ def generate_level(level):
             elif level[y][x] == '1':
                 Tile('spike', x, y)
             elif level[y][x] == 'E':
-                Tile('door_right', x, y)
+                Tile('door', x, y)
     return new_player, x, y
 
 
