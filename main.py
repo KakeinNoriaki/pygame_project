@@ -122,7 +122,6 @@ tile_images = {
 }
 
 
-
 pygame.display.set_caption("Pygame_project")
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
