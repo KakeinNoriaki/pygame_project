@@ -4,7 +4,6 @@ import os
 import time
 
 
-
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
@@ -25,31 +24,49 @@ class Player(pygame.sprite.Sprite):
         self.speed = 1
 
     def update(self):
+        global level_now_num
         collides = pygame.sprite.spritecollide(self, all_sprites, False)
         for coll in collides:
             if coll.__class__ is Tile:
                 if coll.image == tile_images['wall']:
                     if self.rect.collidepoint(coll.rect.center):
-                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 0)
+                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y)
                 if coll.image == tile_images['pit'] or coll.image == tile_images['spike']:
                     if self.rect.collidepoint(coll.rect.center):
                         self.hp -= 1
-                        print(self.hp)
-                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y, 45)
+                        self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
                         time.sleep(1)
-                if coll.image == tile_images['door']:
+                if coll.image == tile_images['door_out']:
                     if self.rect.collidepoint(coll.rect.center):
-                        load_new_lvl()
+                        level_now_num += 1
+                        load_new_room(f'map_{level_now_num}.txt')
+                        break
+                if coll.image == tile_images['door_in']:
+                    if self.rect.collidepoint(coll.rect.center):
+                        level_now_num -= 1
+                        load_new_room(f'map_{level_now_num}.txt')
+                        break
 
-    def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y, mod):
-        if self.rect.x + 15 < coll_rect_x:
-            self.rect.x -= 15 + mod
-        if self.rect.x - 15 > coll_rect_x:
-            self.rect.x += 15 + mod
-        if self.rect.y + 15 < coll_rect_y:
-            self.rect.y -= 15 + mod
-        if self.rect.y - 15 > coll_rect_y:
-            self.rect.y += 15 + mod
+    def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
+        if self.rect.x + 1 < coll_rect_x:
+            self.rect.x -= 7
+        if self.rect.x - 1 > coll_rect_x:
+            self.rect.x += 7
+        if self.rect.y + 1 < coll_rect_y:
+            self.rect.y -= 7
+        if self.rect.y - 1 > coll_rect_y:
+            self.rect.y += 7
+
+    def get_out_of_the_wall_or_trap_2(self, coll_rect_x, coll_rect_y):
+        if self.rect.x + 1 < coll_rect_x:
+            self.rect.x -= 15
+        if self.rect.x - 1 > coll_rect_x:
+            self.rect.x += 15
+        if self.rect.y + 1 < coll_rect_y:
+            self.rect.y -= 15
+        if self.rect.y - 1 > coll_rect_y:
+            self.rect.y += 15
+
 
 
 class AbstractBoss:
@@ -75,33 +92,34 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
-def generate_level(level):
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '.':
+def generate_level(room):
+    for y in range(len(room)):
+        for x in range(len(room[y])):
+            if room[y][x] == '.':
                 Tile('floor', x, y)
-            elif level[y][x] == '#':
+            elif room[y][x] == '#':
                 Tile('wall', x, y)
-            elif level[y][x] == '@':
+            elif room[y][x] == '@':
                 Tile('floor', x, y)
                 new_player = Player(x, y)
-            elif level[y][x] == 'O':
+            elif room[y][x] == 'O':
                 Tile('pit', x, y)
-            elif level[y][x] == '1':
-                Tile('spike', x, y)
-            elif level[y][x] == 'E':
-                Tile('door', x, y)
+            elif room[y][x] == '1':
+                Tile('spike', x, y,)
+            elif room[y][x] == 'E':
+                Tile('door_out', x, y)
+            elif room[y][x] == 'W':
+                Tile('door_in', x, y)
     return new_player, x, y
 
 
-def load_new_lvl():
+def load_new_room(room):
     global player, level_x, level_y, level_map, all_sprites
     all_sprites = pygame.sprite.Group()
     player.kill()
-    level_map = load_level('map_2.txt')
+    level_map = load_level(room)
     player, level_x, level_y = generate_level(level_map)
     all_sprites.add(player)
-    print(all_sprites)
 
 
 WIDTH = 1280
@@ -118,7 +136,8 @@ tile_images = {
     'floor': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
     'spike': load_image("assets\_rooms\_room_tiles_1\spike_tile.png"),
     'pit': load_image("assets\_rooms\_room_tiles_1\pit_tile.png"),
-    'door': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
+    'door_out': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
+    'door_in': load_image("assets\_rooms\_room_tiles_1\_floor_tile_2.png")
 }
 
 
@@ -134,13 +153,14 @@ clock = pygame.time.Clock()
 pygame.key.set_repeat(1, 1)
 player_image = load_image('assets\player\down\player_move_down_1.png')
 
+level_now_num = 1
 level_map = load_level('map_1.txt')
 player, level_x, level_y = generate_level(level_map)
 all_sprites.add(player)
 
 pygame.mixer.init()
 pygame.mixer.music.load('assets\_tracks\classic_music')
-pygame.mixer.music.set_volume(0.05)
+pygame.mixer.music.set_volume(0.01)
 pygame.mixer.music.play()
 
 
