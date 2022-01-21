@@ -33,12 +33,12 @@ class Player(pygame.sprite.Sprite):
                         self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y)
                 if coll.image == tile_images['pit'] or coll.image == tile_images['spike']:
                     if self.rect.collidepoint(coll.rect.center):
-                        if counter > 250:
+                        if counter > 20:
                             self.hp -= 1
                             counter = 0
                         print(self.hp)
                         self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
-                        time.sleep(1)
+                        counter += 1
                 if coll.image == tile_images['door_out']:
                     if self.rect.collidepoint(coll.rect.center):
                         level_now_num += 1
