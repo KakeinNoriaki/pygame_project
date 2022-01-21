@@ -24,7 +24,7 @@ class Player(pygame.sprite.Sprite):
         self.speed = 1
 
     def update(self):
-        global level_now_num
+        global level_now_num, counter
         collides = pygame.sprite.spritecollide(self, all_sprites, False)
         for coll in collides:
             if coll.__class__ is Tile:
@@ -33,7 +33,10 @@ class Player(pygame.sprite.Sprite):
                         self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y)
                 if coll.image == tile_images['pit'] or coll.image == tile_images['spike']:
                     if self.rect.collidepoint(coll.rect.center):
-                        self.hp -= 1
+                        if counter > 250:
+                            self.hp -= 1
+                            counter = 0
+                        print(self.hp)
                         self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
                         time.sleep(1)
                 if coll.image == tile_images['door_out']:
@@ -162,6 +165,8 @@ pygame.mixer.init()
 pygame.mixer.music.load('assets\_tracks\classic_music')
 pygame.mixer.music.set_volume(0.01)
 pygame.mixer.music.play()
+
+counter = 0
 
 
 def main():
