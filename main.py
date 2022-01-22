@@ -71,7 +71,6 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += 15
 
 
-
 class AbstractBoss:
     pass
     #  тут крч сами как нибудь
@@ -125,6 +124,75 @@ def load_new_room(room):
     all_sprites.add(player)
 
 
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def start_screen():
+    intro_text = ["  Начать игру",
+                  "Выйти из игры",
+                  "      Авторы"]
+
+    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.SysFont('comicsansms', 60)
+    text_coord = 300
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 30
+        intro_rect.top = text_coord
+        intro_rect.x = WIDTH / 2 - 230
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                print(event.pos)
+                if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 300 <= event.pos[1] <= 420:
+                    return
+                if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 420 <= event.pos[1] <= 540:
+                    terminate()
+                if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 540 <= event.pos[1] <= 660:
+                    authors_screen()
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def authors_screen():
+    intro_text = ["Князев 'Kakein Noriaki' Максим",
+                  "Артём Мохов",
+                  "Владислав Соловцов"]
+
+    fon = pygame.transform.scale(load_image('fon_2.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.SysFont('comicsansms', 60)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 30
+        intro_rect.top = text_coord
+        intro_rect.x = 50
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                start_screen()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 WIDTH = 1280
 HEIGHT = 768
 FPS = 60
@@ -135,12 +203,12 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
 tile_images = {
-    'wall': load_image("assets\_rooms\_room_tiles_1\wall_tile.png"),
-    'floor': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
-    'spike': load_image("assets\_rooms\_room_tiles_1\spike_tile.png"),
-    'pit': load_image("assets\_rooms\_room_tiles_1\pit_tile.png"),
-    'door_out': load_image("assets\_rooms\_room_tiles_1\_floor_tile.png"),
-    'door_in': load_image("assets\_rooms\_room_tiles_1\_floor_tile_2.png")
+    'wall': load_image("assets/rooms/room_tiles_1/wall_tile.png"),
+    'floor': load_image("assets/rooms/room_tiles_1/floor_tile.png"),
+    'spike': load_image("assets/rooms/room_tiles_1/spike_tile.png"),
+    'pit': load_image("assets/rooms/room_tiles_1/pit_tile.png"),
+    'door_out': load_image("assets/rooms/room_tiles_1/floor_tile.png"),
+    'door_in': load_image("assets/rooms/room_tiles_1/floor_tile_2.png")
 }
 
 
@@ -154,7 +222,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bgk = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.key.set_repeat(1, 1)
-player_image = load_image('assets\player\down\player_move_down_1.png')
+player_image = load_image('assets/player/down/player_move_down_1.png')
 
 level_now_num = 1
 level_map = load_level('map_1.txt')
@@ -162,37 +230,11 @@ player, level_x, level_y = generate_level(level_map)
 all_sprites.add(player)
 
 pygame.mixer.init()
-pygame.mixer.music.load('assets\_tracks\classic_music')
+pygame.mixer.music.load('assets/tracks/classic_music')
 pygame.mixer.music.set_volume(0.01)
 pygame.mixer.music.play()
 
 counter = 0
-
-
-def start_screen():
-    intro_text = ['Типо заставка']
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('white'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            elif event.type == pygame.KEYDOWN or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
-        pygame.display.flip()
-        clock.tick(FPS)
 
 
 def main():
@@ -203,6 +245,7 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                terminate()
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
                 player.old_cords = player.rect.x, player.rect.y
