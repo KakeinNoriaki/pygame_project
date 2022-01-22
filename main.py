@@ -23,6 +23,13 @@ class Player(pygame.sprite.Sprite):
         self.hp = 3
         self.speed = 1
 
+    def print_hp(self):
+        im = pygame.Surface((64, 64))
+        im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
+        for i in range(self.hp):
+            rect = pygame.Rect(64 * i, 0, 64, 64)
+            screen.blit(im, rect)
+
     def update(self):
         if self.hp > 0:
             global level_now_num, counter
@@ -304,6 +311,7 @@ def main():
         all_sprites.update()
         all_sprites.draw(screen)
         player_group.draw(screen)
+        player.print_hp()
         pygame.display.flip()
 
 
