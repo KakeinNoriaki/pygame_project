@@ -24,31 +24,34 @@ class Player(pygame.sprite.Sprite):
         self.speed = 1
 
     def update(self):
-        global level_now_num, counter
-        collides = pygame.sprite.spritecollide(self, all_sprites, False)
-        for coll in collides:
-            if coll.__class__ is Tile:
-                if coll.image == tile_images['wall']:
-                    if self.rect.collidepoint(coll.rect.center):
-                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y)
-                if coll.image == tile_images['pit'] or coll.image == tile_images['spike']:
-                    if self.rect.collidepoint(coll.rect.center):
-                        if counter > 20:
-                            self.hp -= 1
-                            counter = 0
-                        print(self.hp)
-                        self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
-                        counter += 1
-                if coll.image == tile_images['door_out']:
-                    if self.rect.collidepoint(coll.rect.center):
-                        level_now_num += 1
-                        load_new_room(f'map_{level_now_num}.txt')
-                        break
-                if coll.image == tile_images['door_in']:
-                    if self.rect.collidepoint(coll.rect.center):
-                        level_now_num -= 1
-                        load_new_room(f'map_{level_now_num}.txt')
-                        break
+        if self.hp > 0:
+            global level_now_num, counter
+            collides = pygame.sprite.spritecollide(self, all_sprites, False)
+            for coll in collides:
+                if coll.__class__ is Tile:
+                    if coll.image == tile_images['wall']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y)
+                    if coll.image == tile_images['pit'] or coll.image == tile_images['spike']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            if counter > 20:
+                                self.hp -= 1
+                                counter = 0
+                            print(self.hp)
+                            self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
+                            counter += 1
+                    if coll.image == tile_images['door_out']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            level_now_num += 1
+                            load_new_room(f'map_{level_now_num}.txt')
+                            break
+                    if coll.image == tile_images['door_in']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            level_now_num -= 1
+                            load_new_room(f'map_{level_now_num}.txt')
+                            break
+        else:
+            authors_screen()
 
     def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
         if self.rect.x + 1 < coll_rect_x:
@@ -154,7 +157,10 @@ def start_screen():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 print(event.pos)
                 if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 300 <= event.pos[1] <= 420:
-                    return
+                    pygame.mixer.music.load('assets/tracks/main_theme')
+                    pygame.mixer.music.set_volume(0.01)
+                    pygame.mixer.music.play()
+                    main()
                 if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 420 <= event.pos[1] <= 540:
                     terminate()
                 if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 540 <= event.pos[1] <= 660:
@@ -193,6 +199,10 @@ def authors_screen():
         clock.tick(FPS)
 
 
+def game_over():
+    terminate()
+
+
 WIDTH = 1280
 HEIGHT = 768
 FPS = 60
@@ -211,35 +221,43 @@ tile_images = {
     'door_in': load_image("assets/rooms/room_tiles_1/floor_tile_2.png")
 }
 
-
-pygame.display.set_caption("Pygame_project")
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
-tile_width = tile_height = 64
 pygame.init()
+pygame.display.set_caption("Pygame_project")
+tile_width = tile_height = 64
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bgk = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.key.set_repeat(1, 1)
 player_image = load_image('assets/player/down/player_move_down_1.png')
 
-level_now_num = 1
-level_map = load_level('map_1.txt')
-player, level_x, level_y = generate_level(level_map)
-all_sprites.add(player)
-
 pygame.mixer.init()
-pygame.mixer.music.load('assets/tracks/classic_music')
+pygame.mixer.music.load('assets/tracks/main_menu_music')
 pygame.mixer.music.set_volume(0.01)
 pygame.mixer.music.play()
 
+
+
+all_sprites = 0
+tiles_group = 0
+player_group = 0
+level_now_num = 0
+level_map = 0
+player, level_x, level_y = 0, 0, 0
 counter = 0
 
 
 def main():
-    print(all_sprites)
+    global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter
+    all_sprites = pygame.sprite.Group()
+    tiles_group = pygame.sprite.Group()
+    player_group = pygame.sprite.Group()
+    level_now_num = 1
+    level_map = load_level('map_1.txt')
+    player, level_x, level_y = generate_level(level_map)
+    all_sprites.add(player)
+    counter = 0
     running = True
+    player.hp = 3
     while running:
         clock.tick(FPS)
         for event in pygame.event.get():
