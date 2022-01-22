@@ -22,13 +22,13 @@ class Player(pygame.sprite.Sprite):
         self.old_cords = 0, 0
         self.hp = 3
         self.speed = 1
+        self.im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
 
     def print_hp(self):
-        im = pygame.Surface((64, 64))
-        im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
+
         for i in range(self.hp):
             rect = pygame.Rect(64 * i, 0, 64, 64)
-            screen.blit(im, rect)
+            screen.blit(self.im, rect)
 
     def update(self):
         if self.hp > 0:
@@ -57,18 +57,31 @@ class Player(pygame.sprite.Sprite):
                             level_now_num -= 1
                             load_new_room(f'map_{level_now_num}.txt')
                             break
+                    if coll.image == tile_images['plate_off']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            coll.image = tile_images['plate_on']
+                            usl = True
+                            for i in tiles_group:
+                                if i.image == tile_images['plate_off']:
+                                    usl = False
+                                    break
+                            if usl:
+                                print(True)
+                                for i in tiles_group:
+                                    print(i.rect.x, i.rect.y)
+
         else:
             game_over()
 
     def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
         if self.rect.x + 1 < coll_rect_x:
-            self.rect.x -= 7
+            self.rect.x -= 10
         if self.rect.x - 1 > coll_rect_x:
-            self.rect.x += 7
+            self.rect.x += 10
         if self.rect.y + 1 < coll_rect_y:
-            self.rect.y -= 7
+            self.rect.y -= 10
         if self.rect.y - 1 > coll_rect_y:
-            self.rect.y += 7
+            self.rect.y += 10
 
     def get_out_of_the_wall_or_trap_2(self, coll_rect_x, coll_rect_y):
         if self.rect.x + 1 < coll_rect_x:
@@ -122,6 +135,8 @@ def generate_level(room):
                 Tile('door_out', x, y)
             elif room[y][x] == 'W':
                 Tile('door_in', x, y)
+            elif room[y][x] == 'P':
+                Tile('plate_off', x, y)
     return new_player, x, y
 
 
@@ -156,21 +171,20 @@ def start_screen():
         intro_rect.x = WIDTH / 2 - 230
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 print(event.pos)
-                if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 300 <= event.pos[1] <= 420:
+                if 14 * 30 <= event.pos[0] <= WIDTH / 2 + 120 and 300 <= event.pos[1] <= 420:
                     pygame.mixer.music.load('assets/tracks/main_theme')
                     pygame.mixer.music.set_volume(0.01)
                     pygame.mixer.music.play()
                     main()
-                if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 420 <= event.pos[1] <= 540:
+                if 14 * 30 <= event.pos[0] <= WIDTH / 2 + 120 and 420 <= event.pos[1] <= 540:
                     terminate()
-                if 14 * 30 <= event.pos[0] <= WIDTH / 2 and 540 <= event.pos[1] <= 660:
+                if 14 * 30 <= event.pos[0] <= WIDTH / 2 + 120 and 540 <= event.pos[1] <= 660:
                     authors_screen()
 
         pygame.display.flip()
@@ -178,8 +192,8 @@ def start_screen():
 
 
 def authors_screen():
-    intro_text = ["Князев 'Kakein Noriaki' Максим",
-                  "Артём Мохов",
+    intro_text = ["Максим 'Kakein Noriaki' Князев",
+                  "Артём 'Easy711' Мохов",
                   "Владислав Соловцов"]
 
     fon = pygame.transform.scale(load_image('fon_2.jpg'), (WIDTH, HEIGHT))
@@ -232,14 +246,13 @@ def game_over():
                 start_screen()
         pygame.display.flip()
         clock.tick(FPS)
-
         pygame.display.flip()
         clock.tick(FPS)
 
 
 WIDTH = 1280
 HEIGHT = 768
-FPS = 60
+FPS = 120
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -252,7 +265,9 @@ tile_images = {
     'spike': load_image("assets/rooms/room_tiles_1/spike_tile.png"),
     'pit': load_image("assets/rooms/room_tiles_1/pit_tile.png"),
     'door_out': load_image("assets/rooms/room_tiles_1/floor_tile.png"),
-    'door_in': load_image("assets/rooms/room_tiles_1/floor_tile_2.png")
+    'door_in': load_image("assets/rooms/room_tiles_1/floor_tile_2.png"),
+    'plate_on': load_image("assets/rooms/room_tiles_1/plate_on.png"),
+    'plate_off': load_image("assets/rooms/room_tiles_1/plate_off.png")
 }
 
 pygame.init()
@@ -282,7 +297,7 @@ def main():
     player_group = pygame.sprite.Group()
     level_now_num = 1
     level_map = load_level('map_1.txt')
-    player, level_x, level_y = generate_level(level_map)
+    player, _, __ = generate_level(level_map)
     all_sprites.add(player)
     counter = 0
     running = True
@@ -313,6 +328,7 @@ def main():
         player_group.draw(screen)
         player.print_hp()
         pygame.display.flip()
+        clock.tick(FPS)
 
 
 if __name__ == '__main__':
