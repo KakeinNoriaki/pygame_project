@@ -26,7 +26,6 @@ class Player(pygame.sprite.Sprite):
         self.im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
 
     def print_hp(self):
-
         for i in range(self.hp):
             rect = pygame.Rect(64 * i, 0, 64, 64)
             screen.blit(self.im, rect)
@@ -282,6 +281,21 @@ player_image = load_image('assets/player/down/player_move_down_1.png')
 
 pygame.mixer.init()
 
+walkright = [pygame.image.load("assets/player/right/player_move_right_1.png"),
+             pygame.image.load("assets/player/right/player_move_right_2.png"),
+             pygame.image.load("assets/player/right/player_move_right_3.png")]
+walkleft = [pygame.image.load("assets/player/left/player_move_left_1.png"),
+            pygame.image.load("assets/player/left/player_move_left_2.png"),
+            pygame.image.load("assets/player/left/player_move_left_3.png")]
+walkforward = [pygame.image.load("assets/player/up/player_move_up_1.png"),
+               pygame.image.load("assets/player/up/player_move_up_2.png"),
+               pygame.image.load("assets/player/up/player_move_up_3.png")]
+walkdown = [pygame.image.load("assets/player/down/player_move_down_1.png"),
+            pygame.image.load("assets/player/down/player_move_down_2 .png"),
+            pygame.image.load("assets/player/down/player_move_down_3.png")]
+playerStand = [pygame.image.load("assets/player/down/player_move_down_1.png")]
+
+
 all_sprites = 0
 tiles_group = 0
 player_group = 0
@@ -289,10 +303,17 @@ level_now_num = 0
 level_map = 0
 player, level_x, level_y = 0, 0, 0
 counter = 0
+animCount = 0
+left = False
+right = False
+forward = False
+down = False
+
 
 
 def main():
-    global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter
+    global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
+        animCount, left, right, forward, down
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
@@ -300,7 +321,6 @@ def main():
     level_map = load_level('map_1.txt')
     player, _, __ = generate_level(level_map)
     all_sprites.add(player)
-    counter = 0
     running = True
     player.hp = 3
     while running:
@@ -308,28 +328,72 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                terminate()
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
                 player.old_cords = player.rect.x, player.rect.y
                 player.rect.y -= player.speed
+                left = False
+                right = False
+                forward = True
+                down = False
+
             if keys[pygame.K_s]:
                 player.old_cords = player.rect.x, player.rect.y
                 player.rect.y += player.speed
+                left = False
+                right = False
+                forward = False
+                down = True
+
             if keys[pygame.K_d]:
                 player.old_cords = player.rect.x, player.rect.y
                 player.rect.x += player.speed
+                left = False
+                right = True
+                forward = False
+                down = False
+
             if keys[pygame.K_a]:
                 player.old_cords = player.rect.x, player.rect.y
                 player.rect.x -= player.speed
+                left = True
+                right = False
+                forward = False
+                down = False
+
+            if not (keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]):
+                left = False
+                right = False
+                forward = False
+                down = False
+
         screen.fill((180, 35, 122))
         player_group.update()
         all_sprites.update()
         all_sprites.draw(screen)
-        player_group.draw(screen)
+
+        if animCount + 1 >= 60:
+            animCount = 0
+
+        if left:
+            screen.blit(walkleft[animCount // 20], (player.rect.x, player.rect.y))
+            animCount += 1
+
+        if right:
+            screen.blit(walkright[animCount // 20], (player.rect.x, player.rect.y))
+            animCount += 1
+
+        if forward:
+            screen.blit(walkforward[animCount // 20], (player.rect.x, player.rect.y))
+            animCount += 1
+
+        if down:
+            screen.blit(walkdown[animCount // 20], (player.rect.x, player.rect.y))
+            animCount += 1
+        if not (forward or left or right or down):
+            screen.blit(playerStand[0], (player.rect.x, player.rect.y))
         player.print_hp()
         pygame.display.flip()
-        clock.tick(FPS)
 
 
 if __name__ == '__main__':
