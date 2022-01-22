@@ -51,7 +51,7 @@ class Player(pygame.sprite.Sprite):
                             load_new_room(f'map_{level_now_num}.txt')
                             break
         else:
-            authors_screen()
+            game_over()
 
     def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
         if self.rect.x + 1 < coll_rect_x:
@@ -200,7 +200,34 @@ def authors_screen():
 
 
 def game_over():
-    terminate()
+    intro_text = ["Игра окончена"]
+    pygame.mixer.music.load('assets/tracks/main_menu_music')
+    pygame.mixer.music.set_volume(0.01)
+    pygame.mixer.music.play()
+    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.SysFont('comicsansms', 80)
+    text_coord = 300
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 30
+        intro_rect.top = text_coord
+        intro_rect.x = WIDTH / 2 - 230
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                start_screen()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 WIDTH = 1280
@@ -231,11 +258,6 @@ pygame.key.set_repeat(1, 1)
 player_image = load_image('assets/player/down/player_move_down_1.png')
 
 pygame.mixer.init()
-pygame.mixer.music.load('assets/tracks/main_menu_music')
-pygame.mixer.music.set_volume(0.01)
-pygame.mixer.music.play()
-
-
 
 all_sprites = 0
 tiles_group = 0
