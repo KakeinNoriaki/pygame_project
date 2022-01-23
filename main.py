@@ -122,8 +122,77 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += 15
 
 
-class AbstractBoss:
-    pass
+class AbstractBoss(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(boss_group, all_sprites)
+        self.image = boss_image
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+        self.hp = 40
+        self.speed = 2
+        self.pattern = ['move']
+
+    def move(self, player_x, player_y):
+        if self.rect.x > player_x and self.rect.y > player_y:
+            for i in range(20):
+                self.rect.x -= self.speed
+                self.rect.y -= self.speed
+
+        if self.rect.x < player_x and self.rect.y < player_y:
+            for i in range(20):
+                self.rect.x += self.speed
+                self.rect.y += self.speed
+
+        if self.rect.x > player_x and self.rect.y < player_y:
+            for i in range(20):
+                self.rect.x -= self.speed
+                self.rect.y += self.speed
+
+        if self.rect.x < player_x and self.rect.y > player_y:
+            for i in range(20):
+                self.rect.x += self.speed
+                self.rect.y -= self.speed
+
+        if self.rect.x > player_x and self.rect.y == player_y:
+            for i in range(20):
+                self.rect.x -= self.speed
+
+        if self.rect.x < player_x and self.rect.y == player_y:
+            for i in range(20):
+                self.rect.x += self.speed
+
+        if self.rect.x == player_x and self.rect.y > player_y:
+            for i in range(20):
+                self.rect.y -= self.speed
+
+        if self.rect.x == player_x and self.rect.y < player_y:
+            for i in range(20):
+                self.rect.y += self.speed
+
+    def attack_1(self):
+        pass
+
+    def attack_2(self):
+        pass
+
+    def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
+        if self.rect.x + 1 < coll_rect_x:
+            self.rect.x -= 10
+        if self.rect.x - 1 > coll_rect_x:
+            self.rect.x += 10
+        if self.rect.y + 1 < coll_rect_y:
+            self.rect.y -= 10
+        if self.rect.y - 1 > coll_rect_y:
+            self.rect.y += 10
+
+    def update(self):
+        collides = pygame.sprite.spritecollide(self, all_sprites, False)
+        for coll in collides:
+            if coll.__class__ is Tile:
+                if coll.image == tile_images['wall'] or coll.image == tile_images['door_in'] \
+                        or coll.image == tile_images['door_out']:
+                    if self.rect.collidepoint(coll.rect.center):
+                        self.get_out_of_the_wall_or_trap(coll.rect.x, coll.rect.y)
 
 
 def load_image(name):
@@ -149,7 +218,7 @@ def load_level(filename):
 
 
 def generate_level(room):
-    b = 0
+    b = None
     for y in range(len(room)):
         for x in range(len(room[y])):
             if room[y][x] == '.':
@@ -186,7 +255,7 @@ def generate_level(room):
 
             elif room[y][x] == "!":
                 Tile('floor', x, y)
-                b = AbstractBoss()
+                b = AbstractBoss(x, y)
 
     return new_player, x, y, b
 
@@ -391,10 +460,11 @@ bullets = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+boss_group = pygame.sprite.Group()
 level_now_num = 0
 level_map = 0
 player = 0
-boss = 0
+boss = None
 level_x = 0
 level_y = 0
 counter = 0
@@ -414,15 +484,19 @@ attack = False
 
 def main():
     global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
-        animCount, left, right, forward, down, bullets, a, animCount1,left_attack, right_attack, forward_attack, down_attack, attack
+        animCount, left, right, forward, down, bullets, a, animCount1,left_attack, \
+        right_attack, forward_attack, down_attack, attack, boss_group, boss
 
     bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
+    boss_group = pygame.sprite.Group()
     level_now_num = 1
     level_map = load_level('map_1.txt')
     player, _, __, boss = generate_level(level_map)
+    if boss.__class__ == AbstractBoss:
+        boss_group.add(boss)
     all_sprites.add(player)
     running = True
     player.hp = 3
@@ -548,6 +622,8 @@ def main():
                     clock.tick(FPS)
 
         if not pause:
+            if boss.__class__ == AbstractBoss:
+                boss.move(player.rect.x, player.rect.y)
             screen.fill((180, 35, 122))
             all_sprites.update()
             all_sprites.draw(screen)
@@ -628,7 +704,8 @@ def main():
                         animCount1 = 0
                         a = False
                         attack = False
-
+            boss_group.update()
+            boss_group.draw(screen)
             player.print_hp()
 
         pygame.display.flip()
