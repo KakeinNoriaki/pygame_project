@@ -1,7 +1,6 @@
 import pygame
 import sys
 import os
-import time
 
 
 class Tile(pygame.sprite.Sprite):
@@ -10,6 +9,21 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
+
+
+class Arrow(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites, bullets)
+        self.image = pygame.transform.scale(load_image("assets/items/arrow.png"), (WIDTH, HEIGHT))
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y
+        self.rect.centerx = x
+        self.speedy = 20
+
+    def update(self):
+        self.rect.x += self.speedy
+        if self.rect.right > WIDTH:
+            self.kill()
 
 
 class Player(pygame.sprite.Sprite):
@@ -23,6 +37,7 @@ class Player(pygame.sprite.Sprite):
         self.hp = 3
         self.speed = 1
         self.im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
+        self.count = 0
 
     def print_hp(self):
         for i in range(self.hp):
@@ -45,6 +60,7 @@ class Player(pygame.sprite.Sprite):
                             if counter > 20:
                                 self.hp -= 1
                                 counter = 0
+
                             print(self.hp)
                             self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
                             counter += 1
@@ -82,11 +98,6 @@ class Player(pygame.sprite.Sprite):
                             coll.image = tile_images['spike']
                             self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
 
-                    if coll.image == tile_images['arrow_trap']:
-                        if self.rect.collidepoint(coll.rect.center):
-                            pass
-
-
         else:
             game_over()
 
@@ -113,11 +124,11 @@ class Player(pygame.sprite.Sprite):
 
 class AbstractBoss:
     pass
-    #  тут крч сами как нибудь
 
 
 def load_image(name):
     fullname = os.path.join(name)
+
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
@@ -129,13 +140,16 @@ def load_image(name):
 def load_level(filename):
     global level_map
     filename = filename
+
     with open(filename, 'r') as mapFile:
         level_map = [line.strip() for line in mapFile]
+
     max_width = max(map(len, level_map))
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
 def generate_level(room):
+    b = 0
     for y in range(len(room)):
         for x in range(len(room[y])):
             if room[y][x] == '.':
@@ -148,6 +162,7 @@ def generate_level(room):
                 Tile('floor', x, y)
 
                 new_player = Player(x, y)
+
             elif room[y][x] == 'O':
                 Tile('pit', x, y)
 
@@ -169,7 +184,11 @@ def generate_level(room):
             elif room[y][x] == 'A':
                 Tile('arrow_trap', x, y)
 
-    return new_player, x, y
+            elif room[y][x] == "!":
+                Tile('floor', x, y)
+                b = AbstractBoss()
+
+    return new_player, x, y, b
 
 
 def load_new_room(room):
@@ -178,7 +197,7 @@ def load_new_room(room):
     tiles_group = pygame.sprite.Group()
     player.kill()
     level_map = load_level(room)
-    player, level_x, level_y = generate_level(level_map)
+    player, level_x, level_y, boss = generate_level(level_map)
     all_sprites.add(player)
 
 
@@ -326,6 +345,7 @@ bgk = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.key.set_repeat(1, 1)
 player_image = load_image('assets/player/down/player_move_down_1.png')
+boss_image = load_image('assets/player/down/player_move_down_1.png')
 pygame.mixer.init()
 
 walkright = [pygame.image.load("assets/player/right/player_move_right_1.png"),
@@ -344,20 +364,43 @@ walkdown = [pygame.image.load("assets/player/down/player_move_down_1.png"),
             pygame.image.load("assets/player/down/player_move_down_2 .png"),
             pygame.image.load("assets/player/down/player_move_down_3.png")]
 
+attackright = [pygame.image.load("assets/player/attack_right/player_attack_right_1.png"),
+               pygame.image.load("assets/player/attack_right/player_attack_right_2.png"),
+               pygame.image.load("assets/player/attack_right/player_attack_right_3.png"),
+               pygame.image.load("assets/player/attack_right/player_attack_right_4.png")]
+
+attackleft = [pygame.image.load("assets/player/attack_left/player_attack_left_1.png"),
+              pygame.image.load("assets/player/attack_left/player_attack_left_2.png"),
+              pygame.image.load("assets/player/attack_left/player_attack_left_3.png"),
+              pygame.image.load("assets/player/attack_left/player_attack_left_4.png")]
+
+attackdown = [pygame.image.load("assets/player/attack_down/player_attack_down_1.png"),
+              pygame.image.load("assets/player/attack_down/player_attack_down_2.png"),
+              pygame.image.load("assets/player/attack_down/player_attack_down_3.png"),
+              pygame.image.load("assets/player/attack_down/player_attack_down_4.png")]
+
+attackup = [pygame.image.load("assets/player/attack_up/player_attack_up_1.png"),
+            pygame.image.load("assets/player/attack_up/player_attack_up_2.png"),
+            pygame.image.load("assets/player/attack_up/player_attack_up_3.png"),
+            pygame.image.load("assets/player/attack_up/player_attack_up_4.png")]
+
+
 playerStand = [pygame.image.load("assets/player/down/player_move_down_1.png")]
 
-
-all_sprites = 0
-tiles_group = 0
-player_group = 0
+bullets = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
+tiles_group = pygame.sprite.Group()
+player_group = pygame.sprite.Group()
 level_now_num = 0
 level_map = 0
 player = 0
+boss = 0
 level_x = 0
 level_y = 0
 counter = 0
 animCount = 0
-
+animCount1 = 0
+a = True
 left = False
 right = False
 forward = False
@@ -366,14 +409,15 @@ down = False
 
 def main():
     global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
-        animCount, left, right, forward, down
+        animCount, left, right, forward, down, bullets, a, animCount1
 
+    bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player_group = pygame.sprite.Group()
     level_now_num = 1
     level_map = load_level('map_1.txt')
-    player, _, __ = generate_level(level_map)
+    player, _, __, boss = generate_level(level_map)
     all_sprites.add(player)
     running = True
     player.hp = 3
@@ -465,7 +509,6 @@ def main():
 
         if not pause:
             screen.fill((180, 35, 122))
-            player_group.update()
             all_sprites.update()
             all_sprites.draw(screen)
 
