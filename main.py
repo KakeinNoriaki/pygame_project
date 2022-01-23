@@ -407,9 +407,18 @@ forward = False
 down = False
 
 
+
+left_attack = False
+right_attack = False
+forward_attack = False
+down_attack = False
+attack = False
+
+
+
 def main():
     global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
-        animCount, left, right, forward, down, bullets, a, animCount1
+        animCount, left, right, forward, down, bullets, a, animCount1,left_attack, right_attack, forward_attack, down_attack, attack
 
     bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
@@ -470,6 +479,49 @@ def main():
                     right = False
                     forward = False
                     down = False
+
+                if keys[pygame.K_a] and event.type == pygame.MOUSEBUTTONDOWN:
+                    left_attack = True
+                    right_attack = False
+                    forward_attack = False
+                    down_attack = False
+
+
+
+                if keys[pygame.K_s] and event.type == pygame.MOUSEBUTTONDOWN:
+                    left_attack = False
+                    right_attack = False
+                    forward_attack = False
+                    down_attack = True
+
+                if keys[pygame.K_w] and event.type == pygame.MOUSEBUTTONDOWN:
+                    left_attack = False
+                    right_attack = False
+                    forward_attack = True
+                    down_attack = False
+
+
+
+                if keys[pygame.K_d] and event.type == pygame.MOUSEBUTTONDOWN:
+                    left_attack = False
+                    right_attack = True
+                    forward_attack = False
+                    down_attack = False
+
+                if not (keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]) and event.type == pygame.MOUSEBUTTONDOWN:
+                    left_attack = False
+                    right_attack = False
+                    forward_attack = False
+                    down_attack = False
+                    left = False
+                    right = False
+                    forward = False
+                    down = False
+                    attack = True
+
+
+
+
 
             else:
                 intro_text = ["                                   Пауза",
@@ -533,6 +585,68 @@ def main():
 
             if not (forward or left or right or down):
                 screen.blit(playerStand[0], (player.rect.x, player.rect.y))
+
+
+
+            if left_attack:
+                a = True
+                while a:
+                    print(animCount1)
+                    screen.blit(attackleft[animCount1 // 15], (player.rect.x, player.rect.y))
+                    animCount1 += 1
+                    if animCount1 + 1 >= 60:
+                        animCount1 = 0
+                        a = False
+                        left_attack = False
+
+
+            if right_attack:
+                a = True
+                while a:
+                    print(animCount1)
+                    screen.blit(attackright[animCount1 // 15], (player.rect.x, player.rect.y))
+                    animCount1 += 1
+                    if animCount1 + 1 >= 60:
+                        animCount1 = 0
+                        a = False
+                        right_attack = False
+
+
+            if forward_attack:
+                a = True
+                while a:
+                    print(animCount1)
+                    screen.blit(attackup[animCount1 // 15], (player.rect.x, player.rect.y))
+                    animCount1 += 1
+                    if animCount1 + 1 >= 60:
+                        animCount1 = 0
+                        a = False
+                        forward_attack = False
+
+
+            if down_attack:
+                a = True
+                while a:
+                    print(animCount1)
+                    screen.blit(attackdown[animCount1 // 15], (player.rect.x, player.rect.y))
+                    animCount1 += 1
+                    if animCount1 + 1 >= 60:
+                        animCount1 = 0
+                        a = False
+                        down_attack =  False
+
+
+            if attack:
+                a = True
+                while a:
+                    print(animCount1)
+                    screen.blit(attackdown[animCount1 // 15], (player.rect.x, player.rect.y))
+                    animCount1 += 1
+                    if animCount1 + 1 >= 60:
+                        animCount1 = 0
+                        a = False
+                        attack =  False
+
 
             player.print_hp()
 
