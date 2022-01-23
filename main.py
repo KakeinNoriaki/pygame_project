@@ -481,11 +481,21 @@ forward_attack = False
 down_attack = False
 attack = False
 
+minutes = 0
+time_score = 0
+seconds = 0
+seconds1 = 0
+
+font = pygame.font.Font(None, 68)
+black = (0, 0, 0)
+pause1 = False
+
 
 def main():
     global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
         animCount, left, right, forward, down, bullets, a, animCount1,left_attack, \
-        right_attack, forward_attack, down_attack, attack, boss_group, boss
+        right_attack, forward_attack, down_attack, attack, boss_group, boss, minutes, seconds, time_score, \
+        font, black, pause1, seconds1
 
     bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
@@ -703,6 +713,17 @@ def main():
             boss_group.update()
             boss_group.draw(screen)
             player.print_hp()
+
+            text = font.render(f"Время: {str(minutes)}:{str(seconds)}", True, black)
+            player.print_hp()
+            seconds1 += 1
+            seconds = seconds1 // 60
+            if seconds == 60:
+                minutes += 1
+                seconds1 = 0
+
+            print(seconds)
+            screen.blit(text, [1000, 10])
 
         pygame.display.flip()
 
