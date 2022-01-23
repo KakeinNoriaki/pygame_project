@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import time
 
 
 class Tile(pygame.sprite.Sprite):
@@ -414,11 +415,27 @@ forward_attack = False
 down_attack = False
 attack = False
 
+minutes = 0
+time_score = 0
+seconds = 0
+seconds1 = 0
+
+font = pygame.font.Font(None, 68)
+black = (0, 0, 0)
+pause1 = False
+
+
+
+
+
+
+
 
 
 def main():
     global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
-        animCount, left, right, forward, down, bullets, a, animCount1,left_attack, right_attack, forward_attack, down_attack, attack
+        animCount, left, right, forward, down, bullets, a, animCount1,left_attack, right_attack,\
+        forward_attack, down_attack, attack, minutes, seconds, time_score, font, black, pause1, seconds1
 
     bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
@@ -432,7 +449,6 @@ def main():
     player.hp = 3
     pause = False
     while running:
-
         clock.tick(FPS)
         for event in pygame.event.get():
             if not pause:
@@ -522,8 +538,8 @@ def main():
 
 
 
-
             else:
+                pause1 = True
                 intro_text = ["                                   Пауза",
                               "Для продолжения нажните любую кнопку мыши"]
 
@@ -553,6 +569,7 @@ def main():
                         elif event.type == pygame.MOUSEBUTTONDOWN:
                             pause = False
                             run = False
+                            pause1 = False
 
                     pygame.display.flip()
                     clock.tick(FPS)
@@ -633,7 +650,7 @@ def main():
                     if animCount1 + 1 >= 60:
                         animCount1 = 0
                         a = False
-                        down_attack =  False
+                        down_attack = False
 
 
             if attack:
@@ -645,12 +662,20 @@ def main():
                     if animCount1 + 1 >= 60:
                         animCount1 = 0
                         a = False
-                        attack =  False
+                        attack = False
 
-
+            text = font.render(f"Время: {str(minutes)}:{str(seconds)}", True, black)
             player.print_hp()
+            seconds1 += 1
+            seconds = seconds1 // 60
+            if seconds == 60:
+                minutes += 1
+                seconds1 = 0
 
+            print(seconds)
+            screen.blit(text, [1000, 10])
         pygame.display.flip()
+
 
 
 if __name__ == '__main__':
