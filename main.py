@@ -76,7 +76,7 @@ class Player(pygame.sprite.Sprite):
                                 tiles_group.sprites()[139].image = tile_images['door_out']
                                 tiles_group.update()
                                 tiles_group.draw(screen)
-
+                                #  TODO фейковый пол
         else:
             game_over()
 
