@@ -76,7 +76,17 @@ class Player(pygame.sprite.Sprite):
                                 tiles_group.sprites()[139].image = tile_images['door_out']
                                 tiles_group.update()
                                 tiles_group.draw(screen)
-                                #  TODO фейковый пол
+
+                    if coll.image == tile_images['fake_floor']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            coll.image = tile_images['spike']
+                            self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
+
+                    if coll.image == tile_images['arrow_trap']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            pass
+
+
         else:
             game_over()
 
@@ -152,6 +162,12 @@ def generate_level(room):
 
             elif room[y][x] == 'P':
                 Tile('plate_off', x, y)
+
+            elif room[y][x] == 'F':
+                Tile('fake_floor', x, y)
+
+            elif room[y][x] == 'A':
+                Tile('arrow_trap', x, y)
 
     return new_player, x, y
 
@@ -297,7 +313,9 @@ tile_images = {
     'door_out': load_image("assets/rooms/room_tiles_1/floor_tile.png"),
     'door_in': load_image("assets/rooms/room_tiles_1/floor_tile_2.png"),
     'plate_on': load_image("assets/rooms/room_tiles_1/plate_on.png"),
-    'plate_off': load_image("assets/rooms/room_tiles_1/plate_off.png")
+    'plate_off': load_image("assets/rooms/room_tiles_1/plate_off.png"),
+    'fake_floor': load_image("assets/rooms/room_tiles_1/fake_floor.png"),
+    'arrow_trap': load_image("assets/rooms/room_tiles_1/arrow_trap.png")
 }
 
 pygame.init()
