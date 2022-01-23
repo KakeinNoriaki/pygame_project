@@ -495,8 +495,6 @@ def main():
     level_now_num = 1
     level_map = load_level('map_1.txt')
     player, _, __, boss = generate_level(level_map)
-    if boss.__class__ == AbstractBoss:
-        boss_group.add(boss)
     all_sprites.add(player)
     running = True
     player.hp = 3
@@ -622,8 +620,6 @@ def main():
                     clock.tick(FPS)
 
         if not pause:
-            if boss.__class__ == AbstractBoss:
-                boss.move(player.rect.x, player.rect.y)
             screen.fill((180, 35, 122))
             all_sprites.update()
             all_sprites.draw(screen)
