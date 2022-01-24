@@ -16,14 +16,31 @@ class Arrow(pygame.sprite.Sprite):
         super().__init__(all_sprites, bullets)
         self.image = pygame.transform.scale(load_image("assets/items/arrow.png"), (WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
-        self.rect.bottom = y
-        self.rect.centerx = x
-        self.speedy = 20
+        self.speed = 20
 
     def update(self):
-        self.rect.x += self.speedy
+        self.rect.x += self.speed
         if self.rect.right > WIDTH:
             self.kill()
+
+
+class Projectile(pygame.sprite.Sprite)
+    def __init__(self, x, y):
+        super().__init__(all_sprites, bullets)
+        self.image = pygame.transform.scale(load_image("assets/items/ball.png"), (WIDTH, HEIGHT))
+        self.rect = self.image.get_rect()
+        self.speed = 10
+        self.max_hit_count = 10
+
+    def update(self):
+        self.rect = self.rect.move(self.speed, self.speed)
+        collides = pygame.sprite.spritecollide(self, all_sprites, False)
+        for coll in collides:
+            if coll.__class__ is Tile:
+
+                if coll.image == tile_images['wall']:
+
+
 
 
 class Player(pygame.sprite.Sprite):
@@ -134,7 +151,12 @@ class AbstractBoss(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
         self.hp = 40
         self.speed = 1
-        self.pattern = ['move']
+
+        self.on_attack = False
+        self.on_attack_counter = 0
+
+        self.attack_cool_down = 0
+        self.chill = False
 
     def move(self, player_x, player_y):
         if self.rect.x > player_x and self.rect.y > player_y:
@@ -173,8 +195,11 @@ class AbstractBoss(pygame.sprite.Sprite):
             for i in range(10):
                 self.rect.y += self.speed
 
-    def attack_1(self):
-        pass
+    def attack_1(self, player_rect):
+        attack_rect = pygame.Rect([self.rect.centerx - 96, self.rect.centery - 96, 192, 192])
+        if attack_rect.colliderect(player_rect):
+            return True
+        return False
 
     def attack_2(self):
         pass
@@ -222,7 +247,9 @@ def load_level(filename):
 
 
 def generate_level(room):
+    new_player = None
     b = None
+    y, x = 0, 0
     for y in range(len(room)):
         for x in range(len(room[y])):
             if room[y][x] == '.':
@@ -285,11 +312,11 @@ def start_screen():
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont('comicsansms', 60)
+    f = pygame.font.SysFont('comicsansms', 60)
     text_coord = 300
 
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        string_rendered = f.render(line, True, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 30
         intro_rect.top = text_coord
@@ -327,11 +354,11 @@ def authors_screen():
 
     fon = pygame.transform.scale(load_image('fon_2.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont('comicsansms', 60)
+    f = pygame.font.SysFont('comicsansms', 60)
     text_coord = 50
 
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        string_rendered = f.render(line, True, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 30
         intro_rect.top = text_coord
@@ -360,11 +387,11 @@ def game_over():
     pygame.mixer.music.play()
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont('comicsansms', 80)
+    f = pygame.font.SysFont('comicsansms', 80)
     text_coord = 300
 
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        string_rendered = f.render(line, True, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 30
         intro_rect.top = text_coord
@@ -419,41 +446,41 @@ player_image = load_image('assets/player/down/player_move_down_1.png')
 boss_image = load_image('assets/player/down/player_move_down_1.png')
 pygame.mixer.init()
 
-walkright = [pygame.image.load("assets/player/right/player_move_right_1.png"),
-             pygame.image.load("assets/player/right/player_move_right_2.png"),
-             pygame.image.load("assets/player/right/player_move_right_3.png")]
+walk_right = [pygame.image.load("assets/player/right/player_move_right_1.png"),
+              pygame.image.load("assets/player/right/player_move_right_2.png"),
+              pygame.image.load("assets/player/right/player_move_right_3.png")]
 
-walkleft = [pygame.image.load("assets/player/left/player_move_left_1.png"),
-            pygame.image.load("assets/player/left/player_move_left_2.png"),
-            pygame.image.load("assets/player/left/player_move_left_3.png")]
+walk_left = [pygame.image.load("assets/player/left/player_move_left_1.png"),
+             pygame.image.load("assets/player/left/player_move_left_2.png"),
+             pygame.image.load("assets/player/left/player_move_left_3.png")]
 
-walkforward = [pygame.image.load("assets/player/up/player_move_up_1.png"),
-               pygame.image.load("assets/player/up/player_move_up_2.png"),
-               pygame.image.load("assets/player/up/player_move_up_3.png")]
+walk_forward = [pygame.image.load("assets/player/up/player_move_up_1.png"),
+                pygame.image.load("assets/player/up/player_move_up_2.png"),
+                pygame.image.load("assets/player/up/player_move_up_3.png")]
 
-walkdown = [pygame.image.load("assets/player/down/player_move_down_1.png"),
-            pygame.image.load("assets/player/down/player_move_down_2 .png"),
-            pygame.image.load("assets/player/down/player_move_down_3.png")]
+walk_down = [pygame.image.load("assets/player/down/player_move_down_1.png"),
+             pygame.image.load("assets/player/down/player_move_down_2 .png"),
+             pygame.image.load("assets/player/down/player_move_down_3.png")]
 
-attackright = [pygame.image.load("assets/player/attack_right/player_attack_right_1.png"),
-               pygame.image.load("assets/player/attack_right/player_attack_right_2.png"),
-               pygame.image.load("assets/player/attack_right/player_attack_right_3.png"),
-               pygame.image.load("assets/player/attack_right/player_attack_right_4.png")]
+attack_right = [pygame.image.load("assets/player/attack_right/player_attack_right_1.png"),
+                pygame.image.load("assets/player/attack_right/player_attack_right_2.png"),
+                pygame.image.load("assets/player/attack_right/player_attack_right_3.png"),
+                pygame.image.load("assets/player/attack_right/player_attack_right_4.png")]
 
-attackleft = [pygame.image.load("assets/player/attack_left/player_attack_left_1.png"),
-              pygame.image.load("assets/player/attack_left/player_attack_left_2.png"),
-              pygame.image.load("assets/player/attack_left/player_attack_left_3.png"),
-              pygame.image.load("assets/player/attack_left/player_attack_left_4.png")]
+attack_left = [pygame.image.load("assets/player/attack_left/player_attack_left_1.png"),
+               pygame.image.load("assets/player/attack_left/player_attack_left_2.png"),
+               pygame.image.load("assets/player/attack_left/player_attack_left_3.png"),
+               pygame.image.load("assets/player/attack_left/player_attack_left_4.png")]
 
-attackdown = [pygame.image.load("assets/player/attack_down/player_attack_down_1.png"),
-              pygame.image.load("assets/player/attack_down/player_attack_down_2.png"),
-              pygame.image.load("assets/player/attack_down/player_attack_down_3.png"),
-              pygame.image.load("assets/player/attack_down/player_attack_down_4.png")]
+attack_down = [pygame.image.load("assets/player/attack_down/player_attack_down_1.png"),
+               pygame.image.load("assets/player/attack_down/player_attack_down_2.png"),
+               pygame.image.load("assets/player/attack_down/player_attack_down_3.png"),
+               pygame.image.load("assets/player/attack_down/player_attack_down_4.png")]
 
-attackup = [pygame.image.load("assets/player/attack_up/player_attack_up_1.png"),
-            pygame.image.load("assets/player/attack_up/player_attack_up_2.png"),
-            pygame.image.load("assets/player/attack_up/player_attack_up_3.png"),
-            pygame.image.load("assets/player/attack_up/player_attack_up_4.png")]
+attack_up = [pygame.image.load("assets/player/attack_up/player_attack_up_1.png"),
+             pygame.image.load("assets/player/attack_up/player_attack_up_2.png"),
+             pygame.image.load("assets/player/attack_up/player_attack_up_3.png"),
+             pygame.image.load("assets/player/attack_up/player_attack_up_4.png")]
 
 
 playerStand = [pygame.image.load("assets/player/down/player_move_down_1.png")]
@@ -492,12 +519,18 @@ font = pygame.font.Font(None, 68)
 black = (0, 0, 0)
 pause1 = False
 
+attack_on = False
+
 
 def main():
-    global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter,\
-        animCount, left, right, forward, down, bullets, a, animCount1,left_attack, \
-        right_attack, forward_attack, down_attack, attack, boss_group, boss, minutes, seconds, time_score, \
-        font, black, pause1, seconds1, boss
+    global all_sprites, tiles_group, player_group,\
+        level_now_num, level_map, player, counter,\
+        animCount, left, right, forward, down,\
+        bullets, a, animCount1, left_attack,\
+        right_attack, forward_attack, down_attack,\
+        attack, boss_group, boss, minutes, seconds,\
+        time_score, font, black, pause1, seconds1,\
+        boss, attack_on
 
     bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
@@ -609,21 +642,21 @@ def main():
                 text_coord = 300
 
                 for line in intro_text:
-                    string_rendered = font.render(line, 1, pygame.Color('yellow'))
+                    string_rendered = font.render(line, True, pygame.Color('yellow'))
                     intro_rect = string_rendered.get_rect()
                     text_coord += 30
                     intro_rect.top = text_coord
                     intro_rect.x = WIDTH / 2 - 600
                     text_coord += intro_rect.height
                     screen.blit(string_rendered, intro_rect)
-                    run = True
 
+                run = True
                 while run:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
+                    for e in pygame.event.get():
+                        if e.type == pygame.QUIT:
                             terminate()
 
-                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                        elif e.type == pygame.MOUSEBUTTONDOWN:
                             pause = False
                             run = False
 
@@ -634,7 +667,25 @@ def main():
 
         if not pause:
             if boss.__class__ == AbstractBoss:
-                boss.move(player.rect.x, player.rect.y)
+                if boss.attack_1(player.rect):
+                    if not boss.chill:
+                        # player.hp -= 1
+                        print('Пиздык')
+                        boss.chill = True
+                        boss.on_attack = True
+                else:
+                    if not boss.on_attack:
+                        boss.move(player.rect.x, player.rect.y)
+
+                boss.on_attack_counter += 1
+                boss.attack_cool_down += 1
+                if boss.on_attack_counter >= 120:
+                    boss.on_attack = False
+                    boss.on_attack_counter = 0
+                if boss.attack_cool_down >= 720:
+                    boss.chill = False
+                    boss.attack_cool_down = 0
+
             screen.fill((180, 35, 122))
             all_sprites.update()
             all_sprites.draw(screen)
@@ -642,74 +693,64 @@ def main():
             if animCount + 1 >= 60:
                 animCount = 0
 
-            if left:
-                screen.blit(walkleft[animCount // 20], (player.rect.x, player.rect.y))
-                animCount += 1
+            if not attack_on:
+                if left:
+                    screen.blit(walk_left[animCount // 20], (player.rect.x, player.rect.y))
+                    animCount += 1
 
-            if right:
-                screen.blit(walkright[animCount // 20], (player.rect.x, player.rect.y))
-                animCount += 1
+                if right:
+                    screen.blit(walk_right[animCount // 20], (player.rect.x, player.rect.y))
+                    animCount += 1
 
-            if forward:
-                screen.blit(walkforward[animCount // 20], (player.rect.x, player.rect.y))
-                animCount += 1
+                if forward:
+                    screen.blit(walk_forward[animCount // 20], (player.rect.x, player.rect.y))
+                    animCount += 1
 
-            if down:
-                screen.blit(walkdown[animCount // 20], (player.rect.x, player.rect.y))
-                animCount += 1
+                if down:
+                    screen.blit(walk_down[animCount // 20], (player.rect.x, player.rect.y))
+                    animCount += 1
 
-            if not (forward or left or right or down):
-                screen.blit(playerStand[0], (player.rect.x, player.rect.y))
+                if not (forward or left or right or down):
+                    screen.blit(playerStand[0], (player.rect.x, player.rect.y))
 
             if left_attack:
-                a = True
-                while a:
-                    screen.blit(attackleft[animCount1 // 15], (player.rect.x, player.rect.y))
-                    animCount1 += 1
-                    if animCount1 + 1 >= 60:
-                        animCount1 = 0
-                        a = False
-                        left_attack = False
+                screen.blit(attack_left[animCount1 // 15], (player.rect.x, player.rect.y))
+                animCount1 += 1
+                if animCount1 + 1 >= 60:
+                    animCount1 = 0
+                    left_attack = False
+                    attack_on = False
 
             if right_attack:
-                a = True
-                while a:
-                    screen.blit(attackright[animCount1 // 15], (player.rect.x, player.rect.y))
-                    animCount1 += 1
-                    if animCount1 + 1 >= 60:
-                        animCount1 = 0
-                        a = False
-                        right_attack = False
+                screen.blit(attack_right[animCount1 // 15], (player.rect.x, player.rect.y))
+                animCount1 += 1
+                if animCount1 + 1 >= 60:
+                    animCount1 = 0
+                    right_attack = False
+                    attack_on = False
 
             if forward_attack:
-                a = True
-                while a:
-                    screen.blit(attackup[animCount1 // 15], (player.rect.x, player.rect.y))
-                    animCount1 += 1
-                    if animCount1 + 1 >= 60:
-                        animCount1 = 0
-                        a = False
-                        forward_attack = False
+                screen.blit(attack_up[animCount1 // 15], (player.rect.x, player.rect.y))
+                animCount1 += 1
+                if animCount1 + 1 >= 60:
+                    animCount1 = 0
+                    forward_attack = False
+                    attack_on = False
 
             if down_attack:
-                a = True
-                while a:
-                    screen.blit(attackdown[animCount1 // 15], (player.rect.x, player.rect.y))
-                    animCount1 += 1
-                    if animCount1 + 1 >= 60:
-                        animCount1 = 0
-                        a = False
-                        down_attack =  False
-
+                screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
+                animCount1 += 1
+                if animCount1 + 1 >= 60:
+                    animCount1 = 0
+                    down_attack = False
+                    attack_on = False
             if attack:
-                a = True
-                while a:
-                    screen.blit(attackdown[animCount1 // 15], (player.rect.x, player.rect.y))
-                    animCount1 += 1
-                    if animCount1 + 1 >= 60:
-                        animCount1 = 0
-                        a = False
-                        attack = False
+                screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
+                animCount1 += 1
+                if animCount1 + 1 >= 60:
+                    animCount1 = 0
+                    attack = False
+                    attack_on = False
 
             player.print_hp()
 
