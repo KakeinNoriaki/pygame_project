@@ -680,8 +680,7 @@ def main():
             if boss.__class__ == AbstractBoss:
                 if boss.attack_1(player.rect):
                     if not boss.chill:
-                        # player.hp -= 1
-                        print('Пиздык')
+                        player.hp -= 1
                         boss.chill = True
                         boss.on_attack = True
                 else:
@@ -755,6 +754,7 @@ def main():
                     animCount1 = 0
                     down_attack = False
                     attack_on = False
+
             if attack:
                 screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
                 animCount1 += 1
@@ -762,6 +762,10 @@ def main():
                     animCount1 = 0
                     attack = False
                     attack_on = False
+                    if boss.rect.centerx - 32 <= player.rect.centerx <=\
+                            boss.rect.centerx + 32 and boss.rect.centery < player.rect.centery:
+                        boss.hp -= 1
+                        print(boss.hp)
 
             player.print_hp()
 
@@ -776,7 +780,6 @@ def main():
 
         bullets.update()
         for bullet in bullets:
-            print(bullet.rect)
             screen.blit(bullet.image, bullet.rect)
         boss_group.update()
         boss_group.draw(screen)
