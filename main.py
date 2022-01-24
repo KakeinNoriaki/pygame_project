@@ -14,9 +14,12 @@ class Tile(pygame.sprite.Sprite):
 class Arrow(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites, bullets)
-        self.image = pygame.transform.scale(load_image("assets/items/arrow.png"), (WIDTH, HEIGHT))
+        self.image = pygame.transform.scale(load_image("assets/items/arrow.png"), (64, 64))
+        self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
         self.speed = 20
+        self.rect.bottom = y
+        self.rect.centerx = x
 
     def update(self):
         self.rect.x += self.speed
@@ -24,13 +27,16 @@ class Arrow(pygame.sprite.Sprite):
             self.kill()
 
 
-class Projectile(pygame.sprite.Sprite)
+class Projectile(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites, bullets)
         self.image = pygame.transform.scale(load_image("assets/items/ball.png"), (WIDTH, HEIGHT))
         self.rect = self.image.get_rect()
         self.speed = 10
         self.max_hit_count = 10
+        self.rect.bottom = y
+        self.rect.centerx = x
+
 
     def update(self):
         self.rect = self.rect.move(self.speed, self.speed)
@@ -39,8 +45,7 @@ class Projectile(pygame.sprite.Sprite)
             if coll.__class__ is Tile:
 
                 if coll.image == tile_images['wall']:
-
-
+                    pass
 
 
 class Player(pygame.sprite.Sprite):
@@ -54,7 +59,7 @@ class Player(pygame.sprite.Sprite):
         self.hp = 3
         self.speed = 1
         self.im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
-        self.count = 0
+        self.arrows = 0
 
     def print_hp(self):
         for i in range(self.hp):
@@ -116,9 +121,15 @@ class Player(pygame.sprite.Sprite):
 
                     if coll.image == tile_images['arrow_trap']:
                         if self.rect.collidepoint(coll.rect.center):
-                            # тут мы создаём объект класса стрела и добовляем его в all_sprites и bullets
-                            pass
+                            if self.arrows != 2:
+                                arrow = Arrow(0, coll.rect.centery + 32)
+                                all_sprites.add(arrow)
+                                bullets.add(arrow)
+                                self.arrows += 1
 
+                if coll.__class__ is Arrow:
+                    if self.rect.collidepoint(coll.rect.center):
+                        self.hp -= 1
         else:
             game_over()
 
@@ -763,6 +774,10 @@ def main():
                 seconds1 = 0
             screen.blit(text, [1000, 10])
 
+        bullets.update()
+        for bullet in bullets:
+            print(bullet.rect)
+            screen.blit(bullet.image, bullet.rect)
         boss_group.update()
         boss_group.draw(screen)
 
