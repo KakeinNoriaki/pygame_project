@@ -1,8 +1,7 @@
-
-
 import pygame
 import sys
 import os
+import random
 
 
 class Tile(pygame.sprite.Sprite):
@@ -16,16 +15,38 @@ class Tile(pygame.sprite.Sprite):
 class Arrow(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(all_sprites, bullets)
-        self.image = pygame.transform.scale(load_image("assets/items/arrow.png"), (WIDTH, HEIGHT))
+        self.image = pygame.transform.scale(load_image("assets/items/arrow.png"), (64, 64))
+        self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
+        self.speed = 20
         self.rect.bottom = y
         self.rect.centerx = x
-        self.speedy = 20
 
     def update(self):
-        self.rect.x += self.speedy
+        self.rect.x += self.speed
         if self.rect.right > WIDTH:
             self.kill()
+
+
+class Projectile(pygame.sprite.Sprite):
+    def __init__(self, x, y, speed_x, speed_y):
+        super().__init__(all_sprites, bullets)
+        self.image = pygame.transform.scale(load_image("assets/items/ball.png"), (64, 64))
+        self.rect = self.image.get_rect()
+        self.speed_x = speed_x
+        self.speed_y = speed_y
+        self.max_hit_count = 10
+        self.rect.bottom = y
+        self.rect.centerx = x
+
+    def update(self):
+        self.rect = self.rect.move(self.speed_x, self.speed_y)
+        collides = pygame.sprite.spritecollide(self, all_sprites, False)
+        for coll in collides:
+            if coll.__class__ is Tile:
+                if coll.image == tile_images['wall'] or \
+                        coll.image == tile_images['door_out'] or coll.image == tile_images['door_in']:
+                    self.kill()
 
 
 class Player(pygame.sprite.Sprite):
@@ -39,7 +60,7 @@ class Player(pygame.sprite.Sprite):
         self.hp = 3
         self.speed = 1
         self.im = pygame.transform.scale(load_image("assets/items/heart.png"), [64, 64])
-        self.count = 0
+        self.arrows = 0
 
     def print_hp(self):
         for i in range(self.hp):
@@ -48,7 +69,7 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         if self.hp > 0:
-            global level_now_num, counter
+            global level_now_num, counter, boss
             collides = pygame.sprite.spritecollide(self, all_sprites, False)
             for coll in collides:
                 if coll.__class__ is Tile:
@@ -63,7 +84,6 @@ class Player(pygame.sprite.Sprite):
                                 self.hp -= 1
                                 counter = 0
 
-                            print(self.hp)
                             self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
                             counter += 1
 
@@ -100,6 +120,24 @@ class Player(pygame.sprite.Sprite):
                             coll.image = tile_images['spike']
                             self.get_out_of_the_wall_or_trap_2(coll.rect.x, coll.rect.y)
 
+                    if coll.image == tile_images['arrow_trap']:
+                        if self.rect.collidepoint(coll.rect.center):
+                            if self.arrows != 2:
+                                arrow = Arrow(0, coll.rect.centery + 32)
+                                all_sprites.add(arrow)
+                                bullets.add(arrow)
+                                self.arrows += 1
+
+                if coll.__class__ is Arrow:
+                    if self.rect.collidepoint(coll.rect.center):
+                        self.hp -= 1
+
+                if boss.__class__ == AbstractBoss:
+                    if coll.__class__ is Projectile:
+                        if self.rect.collidepoint(coll.rect.center):
+                            self.hp -= 1
+                            coll.kill()
+
         else:
             game_over()
 
@@ -131,51 +169,70 @@ class AbstractBoss(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.hp = 40
-        self.speed = 2
-        self.pattern = ['move']
+        self.speed = 1
+
+        self.on_attack = False
+        self.on_attack_counter = 0
+
+        self.attack_cool_down = 0
+        self.chill = False
 
     def move(self, player_x, player_y):
         if self.rect.x > player_x and self.rect.y > player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.x -= self.speed
                 self.rect.y -= self.speed
 
         if self.rect.x < player_x and self.rect.y < player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.x += self.speed
                 self.rect.y += self.speed
 
         if self.rect.x > player_x and self.rect.y < player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.x -= self.speed
                 self.rect.y += self.speed
 
         if self.rect.x < player_x and self.rect.y > player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.x += self.speed
                 self.rect.y -= self.speed
 
         if self.rect.x > player_x and self.rect.y == player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.x -= self.speed
 
         if self.rect.x < player_x and self.rect.y == player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.x += self.speed
 
         if self.rect.x == player_x and self.rect.y > player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.y -= self.speed
 
         if self.rect.x == player_x and self.rect.y < player_y:
-            for i in range(20):
+            for i in range(10):
                 self.rect.y += self.speed
 
-    def attack_1(self):
-        pass
+    def attack_1(self, player_rect):
+        attack_rect = pygame.Rect([self.rect.centerx - 96, self.rect.centery - 96, 192, 192])
+        if attack_rect.colliderect(player_rect):
+            return True
+        return False
 
     def attack_2(self):
-        pass
+        projectile1 = Projectile(self.rect.centerx, self.rect.centery, -10, 0)
+        projectile2 = Projectile(self.rect.centerx, self.rect.centery, 10, 0)
+        projectile3 = Projectile(self.rect.centerx, self.rect.centery, 0, -10)
+        projectile4 = Projectile(self.rect.centerx, self.rect.centery, 0, 10)
+        bullets.add(projectile1)
+        bullets.add(projectile2)
+        bullets.add(projectile3)
+        bullets.add(projectile4)
+        all_sprites.add(projectile1)
+        all_sprites.add(projectile2)
+        all_sprites.add(projectile3)
+        all_sprites.add(projectile4)
 
     def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
         if self.rect.x + 1 < coll_rect_x:
@@ -220,7 +277,9 @@ def load_level(filename):
 
 
 def generate_level(room):
+    new_player = None
     b = None
+    y, x = 0, 0
     for y in range(len(room)):
         for x in range(len(room[y])):
             if room[y][x] == '.':
@@ -238,7 +297,7 @@ def generate_level(room):
                 Tile('pit', x, y)
 
             elif room[y][x] == '1':
-                Tile('spike', x, y, )
+                Tile('spike', x, y,)
 
             elif room[y][x] == 'E':
                 Tile('door_out', x, y)
@@ -258,12 +317,11 @@ def generate_level(room):
             elif room[y][x] == "!":
                 Tile('floor', x, y)
                 b = AbstractBoss(x, y)
-
     return new_player, x, y, b
 
 
 def load_new_room(room):
-    global player, level_x, level_y, level_map, all_sprites, tiles_group
+    global player, level_x, level_y, level_map, all_sprites, tiles_group, boss
     all_sprites = pygame.sprite.Group()
     tiles_group = pygame.sprite.Group()
     player.kill()
@@ -284,11 +342,11 @@ def start_screen():
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont('comicsansms', 60)
+    f = pygame.font.SysFont('comicsansms', 60)
     text_coord = 300
 
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        string_rendered = f.render(line, True, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 30
         intro_rect.top = text_coord
@@ -302,7 +360,6 @@ def start_screen():
                 terminate()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                print(event.pos)
 
                 if 14 * 30 <= event.pos[0] <= WIDTH / 2 + 120 and 300 <= event.pos[1] <= 420:
                     pygame.mixer.music.load('assets/tracks/main_theme')
@@ -327,11 +384,11 @@ def authors_screen():
 
     fon = pygame.transform.scale(load_image('fon_2.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont('comicsansms', 60)
+    f = pygame.font.SysFont('comicsansms', 60)
     text_coord = 50
 
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        string_rendered = f.render(line, True, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 30
         intro_rect.top = text_coord
@@ -360,11 +417,11 @@ def game_over():
     pygame.mixer.music.play()
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont('comicsansms', 80)
+    f = pygame.font.SysFont('comicsansms', 80)
     text_coord = 300
 
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        string_rendered = f.render(line, True, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 30
         intro_rect.top = text_coord
@@ -416,46 +473,55 @@ bgk = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 pygame.key.set_repeat(1, 1)
 player_image = load_image('assets/player/down/player_move_down_1.png')
-boss_image = load_image('assets/player/down/player_move_down_1.png')
+boss_image = pygame.image.load("assets/boss/miniboss7.png")
 pygame.mixer.init()
 
-walkright = [pygame.image.load("assets/player/right/player_move_right_1.png"),
-             pygame.image.load("assets/player/right/player_move_right_2.png"),
-             pygame.image.load("assets/player/right/player_move_right_3.png")]
+walk_right = [pygame.image.load("assets/player/right/player_move_right_1.png"),
+              pygame.image.load("assets/player/right/player_move_right_2.png"),
+              pygame.image.load("assets/player/right/player_move_right_3.png")]
 
-walkleft = [pygame.image.load("assets/player/left/player_move_left_1.png"),
-            pygame.image.load("assets/player/left/player_move_left_2.png"),
-            pygame.image.load("assets/player/left/player_move_left_3.png")]
+walk_left = [pygame.image.load("assets/player/left/player_move_left_1.png"),
+             pygame.image.load("assets/player/left/player_move_left_2.png"),
+             pygame.image.load("assets/player/left/player_move_left_3.png")]
 
-walkforward = [pygame.image.load("assets/player/up/player_move_up_1.png"),
-               pygame.image.load("assets/player/up/player_move_up_2.png"),
-               pygame.image.load("assets/player/up/player_move_up_3.png")]
+walk_forward = [pygame.image.load("assets/player/up/player_move_up_1.png"),
+                pygame.image.load("assets/player/up/player_move_up_2.png"),
+                pygame.image.load("assets/player/up/player_move_up_3.png")]
 
-walkdown = [pygame.image.load("assets/player/down/player_move_down_1.png"),
-            pygame.image.load("assets/player/down/player_move_down_2 .png"),
-            pygame.image.load("assets/player/down/player_move_down_3.png")]
+walk_down = [pygame.image.load("assets/player/down/player_move_down_1.png"),
+             pygame.image.load("assets/player/down/player_move_down_2 .png"),
+             pygame.image.load("assets/player/down/player_move_down_3.png")]
 
-attackright = [pygame.image.load("assets/player/attack_right/player_attack_right_1.png"),
-               pygame.image.load("assets/player/attack_right/player_attack_right_2.png"),
-               pygame.image.load("assets/player/attack_right/player_attack_right_3.png"),
-               pygame.image.load("assets/player/attack_right/player_attack_right_4.png")]
+attack_right = [pygame.image.load("assets/player/attack_right/player_attack_right_1.png"),
+                pygame.image.load("assets/player/attack_right/player_attack_right_2.png"),
+                pygame.image.load("assets/player/attack_right/player_attack_right_3.png"),
+                pygame.image.load("assets/player/attack_right/player_attack_right_4.png")]
 
-attackleft = [pygame.image.load("assets/player/attack_left/player_attack_left_1.png"),
-              pygame.image.load("assets/player/attack_left/player_attack_left_2.png"),
-              pygame.image.load("assets/player/attack_left/player_attack_left_3.png"),
-              pygame.image.load("assets/player/attack_left/player_attack_left_4.png")]
+attack_left = [pygame.image.load("assets/player/attack_left/player_attack_left_1.png"),
+               pygame.image.load("assets/player/attack_left/player_attack_left_2.png"),
+               pygame.image.load("assets/player/attack_left/player_attack_left_3.png"),
+               pygame.image.load("assets/player/attack_left/player_attack_left_4.png")]
 
-attackdown = [pygame.image.load("assets/player/attack_down/player_attack_down_1.png"),
-              pygame.image.load("assets/player/attack_down/player_attack_down_2.png"),
-              pygame.image.load("assets/player/attack_down/player_attack_down_3.png"),
-              pygame.image.load("assets/player/attack_down/player_attack_down_4.png")]
+attack_down = [pygame.image.load("assets/player/attack_down/player_attack_down_1.png"),
+               pygame.image.load("assets/player/attack_down/player_attack_down_2.png"),
+               pygame.image.load("assets/player/attack_down/player_attack_down_3.png"),
+               pygame.image.load("assets/player/attack_down/player_attack_down_4.png")]
 
-attackup = [pygame.image.load("assets/player/attack_up/player_attack_up_1.png"),
-            pygame.image.load("assets/player/attack_up/player_attack_up_2.png"),
-            pygame.image.load("assets/player/attack_up/player_attack_up_3.png"),
-            pygame.image.load("assets/player/attack_up/player_attack_up_4.png")]
+attack_up = [pygame.image.load("assets/player/attack_up/player_attack_up_1.png"),
+             pygame.image.load("assets/player/attack_up/player_attack_up_2.png"),
+             pygame.image.load("assets/player/attack_up/player_attack_up_3.png"),
+             pygame.image.load("assets/player/attack_up/player_attack_up_4.png")]
+
 
 playerStand = [pygame.image.load("assets/player/down/player_move_down_1.png")]
+
+
+
+
+boss_attack = [pygame.image.load("assets/boss/miniboss7.png"), pygame.image.load("assets/boss/miniboss8.png"), pygame.image.load("assets/boss/miniboss9.png"), pygame.image.load("assets/boss/miniboss10.png"),pygame.image.load("assets/boss/miniboss11.png"), pygame.image.load("assets/boss/miniboss12.png"), pygame.image.load("assets/boss/miniboss13.png"),pygame.image.load("assets/boss/miniboss14.png")]
+
+
+boss_stand = [pygame.image.load("assets/boss/miniboss7.png")]
 
 bullets = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
@@ -482,15 +548,33 @@ forward_attack = False
 down_attack = False
 attack = False
 
+
+boss_in_attack = False
+boss_attack_on = False
+animCount2 = 0
+
+
+minutes = 0
+time_score = 0
+seconds = 0
+seconds1 = 0
+
+font = pygame.font.Font(None, 68)
+black = (0, 0, 0)
+pause1 = False
+
 attack_on = False
 
 
-
-
 def main():
-    global all_sprites, tiles_group, player_group, level_now_num, level_map, player, counter, \
-        animCount, left, right, forward, down, bullets, a, animCount1, left_attack, \
-        right_attack, forward_attack, down_attack, attack, boss_group, boss, attack_on
+    global all_sprites, tiles_group, player_group,\
+        level_now_num, level_map, player, counter,\
+        animCount, left, right, forward, down,\
+        bullets, a, animCount1, left_attack,\
+        right_attack, forward_attack, down_attack,\
+        attack, boss_group, boss, minutes, seconds,\
+        time_score, font, black, pause1, seconds1,\
+        boss, attack_on, boss_attack, boss_stand, boss_in_attack, animCount2, boss_attack_on
 
     bullets = pygame.sprite.Group()
     all_sprites = pygame.sprite.Group()
@@ -558,35 +642,27 @@ def main():
                     right_attack = False
                     forward_attack = False
                     down_attack = False
-                    attack_on = True
-
-
 
                 if keys[pygame.K_s] and event.type == pygame.MOUSEBUTTONDOWN:
                     left_attack = False
                     right_attack = False
                     forward_attack = False
                     down_attack = True
-                    attack_on = True
-
 
                 if keys[pygame.K_w] and event.type == pygame.MOUSEBUTTONDOWN:
                     left_attack = False
                     right_attack = False
                     forward_attack = True
                     down_attack = False
-                    attack_on = True
-
 
                 if keys[pygame.K_d] and event.type == pygame.MOUSEBUTTONDOWN:
                     left_attack = False
                     right_attack = True
                     forward_attack = False
                     down_attack = False
-                    attack_on = True
 
-                if not (keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[
-                    pygame.K_d]) and event.type == pygame.MOUSEBUTTONDOWN:
+                if not (keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a]
+                        or keys[pygame.K_d]) and event.type == pygame.MOUSEBUTTONDOWN:
                     left_attack = False
                     right_attack = False
                     forward_attack = False
@@ -596,7 +672,7 @@ def main():
                     forward = False
                     down = False
                     attack = True
-                    attack_on = True
+
             else:
                 intro_text = ["                                   Пауза",
                               "Для продолжения нажните любую кнопку мыши"]
@@ -610,21 +686,21 @@ def main():
                 text_coord = 300
 
                 for line in intro_text:
-                    string_rendered = font.render(line, 1, pygame.Color('yellow'))
+                    string_rendered = font.render(line, True, pygame.Color('yellow'))
                     intro_rect = string_rendered.get_rect()
                     text_coord += 30
                     intro_rect.top = text_coord
                     intro_rect.x = WIDTH / 2 - 600
                     text_coord += intro_rect.height
                     screen.blit(string_rendered, intro_rect)
-                    run = True
 
+                run = True
                 while run:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
+                    for e in pygame.event.get():
+                        if e.type == pygame.QUIT:
                             terminate()
 
-                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                        elif e.type == pygame.MOUSEBUTTONDOWN:
                             pause = False
                             run = False
 
@@ -634,81 +710,162 @@ def main():
                     clock.tick(FPS)
 
         if not pause:
+            if boss.__class__ == AbstractBoss:
+                if boss.attack_1(player.rect):
+                    if not boss.chill:
+                        player.hp -= 1
+                        boss.chill = True
+                        boss_in_attack = True
+                        boss.on_attack = True
+
+                elif random.randint(0, 100) == 5:
+                    boss.attack_2()
+                    boss.chill = True
+                    boss_in_attack = True
+                    boss.on_attack = True
+
+                else:
+                    if not boss.on_attack:
+                        boss_in_attack = False
+                        boss.move(player.rect.x, player.rect.y)
+
+                boss.on_attack_counter += 1
+                boss.attack_cool_down += 1
+
+                if boss.hp <= 0:
+                    boss.kill()
+
+                if boss.on_attack_counter >= 120:
+                    boss.on_attack = False
+                    boss.on_attack_counter = 0
+                if boss.attack_cool_down >= 720:
+                    boss.chill = False
+                    boss.attack_cool_down = 0
+
             screen.fill((180, 35, 122))
             all_sprites.update()
             all_sprites.draw(screen)
 
             if animCount + 1 >= 60:
                 animCount = 0
+
             if not attack_on:
                 if left:
-                    screen.blit(walkleft[animCount // 20], (player.rect.x, player.rect.y))
+                    screen.blit(walk_left[animCount // 20], (player.rect.x, player.rect.y))
                     animCount += 1
 
                 if right:
-                    screen.blit(walkright[animCount // 20], (player.rect.x, player.rect.y))
+                    screen.blit(walk_right[animCount // 20], (player.rect.x, player.rect.y))
                     animCount += 1
 
                 if forward:
-                    screen.blit(walkforward[animCount // 20], (player.rect.x, player.rect.y))
+                    screen.blit(walk_forward[animCount // 20], (player.rect.x, player.rect.y))
                     animCount += 1
 
                 if down:
-                    screen.blit(walkdown[animCount // 20], (player.rect.x, player.rect.y))
+                    screen.blit(walk_down[animCount // 20], (player.rect.x, player.rect.y))
                     animCount += 1
 
                 if not (forward or left or right or down):
                     screen.blit(playerStand[0], (player.rect.x, player.rect.y))
 
             if left_attack:
-                print(animCount1)
-                screen.blit(attackleft[animCount1 // 15], (player.rect.x, player.rect.y))
+                screen.blit(attack_left[animCount1 // 15], (player.rect.x, player.rect.y))
                 animCount1 += 1
                 if animCount1 + 1 >= 60:
                     animCount1 = 0
                     left_attack = False
                     attack_on = False
-
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if right_attack:
-                print(animCount1)
-                screen.blit(attackright[animCount1 // 15], (player.rect.x, player.rect.y))
+                screen.blit(attack_right[animCount1 // 15], (player.rect.x, player.rect.y))
                 animCount1 += 1
                 if animCount1 + 1 >= 60:
                     animCount1 = 0
                     right_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if forward_attack:
-                print(animCount1)
-                screen.blit(attackup[animCount1 // 15], (player.rect.x, player.rect.y))
+                screen.blit(attack_up[animCount1 // 15], (player.rect.x, player.rect.y))
                 animCount1 += 1
                 if animCount1 + 1 >= 60:
                     animCount1 = 0
                     forward_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if down_attack:
-                print(animCount1)
-                screen.blit(attackdown[animCount1 // 15], (player.rect.x, player.rect.y))
+                screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
                 animCount1 += 1
                 if animCount1 + 1 >= 60:
                     animCount1 = 0
                     down_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
+
             if attack:
-                print(animCount1)
-                screen.blit(attackdown[animCount1 // 15], (player.rect.x, player.rect.y))
+                screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
                 animCount1 += 1
                 if animCount1 + 1 >= 60:
                     animCount1 = 0
                     attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
-            boss_group.update()
-            boss_group.draw(screen)
+            if boss.__class__ == AbstractBoss:
+                if boss_in_attack:
+                    boss_attack_on = True
+                    screen.blit(boss_attack[animCount2 // 8], (boss.rect.x, boss.rect.y))
+                    animCount2 += 1
+                    print(animCount2)
+                    if animCount2 + 1 >= 60:
+                        animCount2 = 0
+                        boss_in_attack = False
+
+                if not boss_in_attack:
+                    if not boss_attack_on:
+                        screen.blit(boss_stand[0], (boss.rect.x, boss.rect.y))
+
+
+
             player.print_hp()
 
+            text = font.render(f"Время: {str(minutes)}:{str(seconds)}", True, black)
+            player.print_hp()
+            seconds1 += 1
+            seconds = seconds1 // 60
+            if seconds == 60:
+                minutes += 1
+                seconds1 = 0
+            screen.blit(text, [1000, 10])
+
+        bullets.update()
+        for bullet in bullets:
+            screen.blit(bullet.image, bullet.rect)
+        boss_group.update()
+        boss_group.draw(screen)
         pygame.display.flip()
 
 
