@@ -136,7 +136,7 @@ class Player(pygame.sprite.Sprite):
                     if coll.__class__ is Projectile:
                         if self.rect.collidepoint(coll.rect.center):
                             self.hp -= 1
-
+                            coll.kill()
 
         else:
             game_over()
