@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import random
 
 
 class Tile(pygame.sprite.Sprite):
@@ -28,24 +29,24 @@ class Arrow(pygame.sprite.Sprite):
 
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, speed_x, speed_y):
         super().__init__(all_sprites, bullets)
-        self.image = pygame.transform.scale(load_image("assets/items/ball.png"), (WIDTH, HEIGHT))
+        self.image = pygame.transform.scale(load_image("assets/items/ball.png"), (64, 64))
         self.rect = self.image.get_rect()
-        self.speed = 10
+        self.speed_x = speed_x
+        self.speed_y = speed_y
         self.max_hit_count = 10
         self.rect.bottom = y
         self.rect.centerx = x
 
-
     def update(self):
-        self.rect = self.rect.move(self.speed, self.speed)
+        self.rect = self.rect.move(self.speed_x, self.speed_y)
         collides = pygame.sprite.spritecollide(self, all_sprites, False)
         for coll in collides:
             if coll.__class__ is Tile:
-
-                if coll.image == tile_images['wall']:
-                    pass
+                if coll.image == tile_images['wall'] or \
+                        coll.image == tile_images['door_out'] or coll.image == tile_images['door_in']:
+                    self.kill()
 
 
 class Player(pygame.sprite.Sprite):
@@ -130,6 +131,13 @@ class Player(pygame.sprite.Sprite):
                 if coll.__class__ is Arrow:
                     if self.rect.collidepoint(coll.rect.center):
                         self.hp -= 1
+
+                if boss.__class__ == AbstractBoss:
+                    if coll.__class__ is Projectile:
+                        if self.rect.collidepoint(coll.rect.center):
+                            self.hp -= 1
+
+
         else:
             game_over()
 
@@ -213,7 +221,18 @@ class AbstractBoss(pygame.sprite.Sprite):
         return False
 
     def attack_2(self):
-        pass
+        projectile1 = Projectile(self.rect.centerx, self.rect.centery, -10, 0)
+        projectile2 = Projectile(self.rect.centerx, self.rect.centery, 10, 0)
+        projectile3 = Projectile(self.rect.centerx, self.rect.centery, 0, -10)
+        projectile4 = Projectile(self.rect.centerx, self.rect.centery, 0, 10)
+        bullets.add(projectile1)
+        bullets.add(projectile2)
+        bullets.add(projectile3)
+        bullets.add(projectile4)
+        all_sprites.add(projectile1)
+        all_sprites.add(projectile2)
+        all_sprites.add(projectile3)
+        all_sprites.add(projectile4)
 
     def get_out_of_the_wall_or_trap(self, coll_rect_x, coll_rect_y):
         if self.rect.x + 1 < coll_rect_x:
@@ -683,12 +702,22 @@ def main():
                         player.hp -= 1
                         boss.chill = True
                         boss.on_attack = True
+
+                elif random.randint(0, 100) == 5:
+                    boss.attack_2()
+                    boss.chill = True
+                    boss.on_attack = True
+
                 else:
                     if not boss.on_attack:
                         boss.move(player.rect.x, player.rect.y)
 
                 boss.on_attack_counter += 1
                 boss.attack_cool_down += 1
+
+                if boss.hp <= 0:
+                    boss.kill()
+
                 if boss.on_attack_counter >= 120:
                     boss.on_attack = False
                     boss.on_attack_counter = 0
@@ -730,6 +759,11 @@ def main():
                     animCount1 = 0
                     left_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if right_attack:
                 screen.blit(attack_right[animCount1 // 15], (player.rect.x, player.rect.y))
@@ -738,6 +772,11 @@ def main():
                     animCount1 = 0
                     right_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if forward_attack:
                 screen.blit(attack_up[animCount1 // 15], (player.rect.x, player.rect.y))
@@ -746,6 +785,11 @@ def main():
                     animCount1 = 0
                     forward_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if down_attack:
                 screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
@@ -754,6 +798,11 @@ def main():
                     animCount1 = 0
                     down_attack = False
                     attack_on = False
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             if attack:
                 screen.blit(attack_down[animCount1 // 15], (player.rect.x, player.rect.y))
@@ -762,10 +811,11 @@ def main():
                     animCount1 = 0
                     attack = False
                     attack_on = False
-                    if boss.rect.centerx - 32 <= player.rect.centerx <=\
-                            boss.rect.centerx + 32 and boss.rect.centery < player.rect.centery:
-                        boss.hp -= 1
-                        print(boss.hp)
+                    if boss.__class__ == AbstractBoss:
+                        attack_rect = pygame.Rect([player.rect.centerx - 96, player.rect.centery - 96, 192, 192])
+                        if attack_rect.colliderect(boss.rect):
+                            boss.hp -= 1
+                            print(boss.hp)
 
             player.print_hp()
 
