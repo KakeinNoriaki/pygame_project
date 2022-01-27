@@ -510,7 +510,7 @@ def FAQ():
         clock.tick(FPS)
 
 
-def wim_screen():
+def win_screen():
     global minutes, seconds
     intro_text = ["Игра окончена",
                   f"Ваш результат: {minutes}:{seconds}"]
